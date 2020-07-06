@@ -1,4 +1,5 @@
 {
-    "token":"token-here",
-    "prefix":"$"
+    "token":"Token-here",
+    "prefix":"$",
+    "admId":"Admin-Id"
 }

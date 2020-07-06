@@ -12,9 +12,10 @@ const prefixo = config.prefix
 
 client.on("guildCreate", (guild) => {
     db.set(guild.id, []).write()
-    console.log('entrei em um novo servidor: ' + guild.id)
+    console.log(`entrei em um novo servidor: ${guild.name} (id: ${guild.id})`)
 })
 
+// Comandos amarzenados num objeto
 const comandos = {
     rolar(argumento, autor) {
         var args = argumento.split('d')
@@ -232,12 +233,15 @@ ${mostrarItens(perfil)}`
         db.get(message.guild.id).find({ id: autor.id }).assign({ nome: n }).write()
         return `Seu nome agora é: ${n}!`
     },
+    ping(argumento, autor, message, mencao, perfil) {
+        pingz(argumento, autor, message, mencao, perfil)
+    },
     help(argumento, autor, message, mencao, perfil) {
         var args = argumento.split(' ')
         if (argumento == '') {
             return `Digite $help (nome do comando) pra saber o que o comando faz.
 Comandos:
-\`[rolar, ficha, vida, ouro, vidamax, habilidade, forca, destreza, inteligencia, percepcao, carisma, itens, nome, apagarperfil, help]\`
+\`[rolar, ficha, vida, ouro, vidamax, habilidade, forca, destreza, inteligencia, percepcao, carisma, ping, itens, nome, apagarperfil, help]\`
             `
         }
         let comando1 = args[0]
@@ -252,18 +256,19 @@ Comandos:
         return res
     },
 }
+// Função pra pegar numero aleatorio
 function getRandom(x) {
     return Math.floor(Math.random() * (x - 1) + 1)
 }
+
 client.once('ready', () => {
     console.log('Pronto!');
+    client.user.setActivity(`Digite: $help`, { type: "LISTENING" })
 });
 
 client.login(config.token);
 
 client.on('message', message => {
-    console.log(message.content);
-
 
     if (message.author.bot) return
 
@@ -353,5 +358,67 @@ const helpComandos = {
     itens() { return "Escreva $itens pra mostrar seus itens, escreva $itens + (nome do item) ou escreva $itens - (numero do item no iventario). Exemplo: $itens ou $itens - 2" },
     nome() { return "Escreva $nome (e o nome desejado) ou nome $nome pra mostrar seu nome. Exemplo: $nome Leonardo" },
     apagarperfil() { return "Escreva $apagarperfil pra apagar seu perfil. CUIDADO!. Exemplo: $apagarperfil" },
+    ping() { return "Escreva $ping para ver o ping do bot. Exemplo: $ping" },
     help() { return "Escreva $help (comando) pra mostrar o que o comando faz. Exemplo: $help rolar" }
 }
+
+client.on('message', message => {
+    if (message.author.id != config.admId) return
+
+    const args = message.content.slice(prefixo.length).trim().split(/ +/g)
+    const comando = args.shift().toLowerCase()
+    const argumento = message.content.slice(comando.length + prefixo.length + 1)
+    const autor = message.author
+    const mencao = message.mentions.members.first()
+    var perfil = db.get(message.guild.id).find({ id: autor.id }).value()
+
+    if (!message.content.startsWith(prefixo)) return
+    if (!admComands[comando]) return
+
+    var executar = admComands[comando]
+    var res = executar(argumento, autor, message, mencao, perfil)
+
+    if (!res) return
+    message.channel.send(res)
+})
+const admComands = { // comandos do corno do adm... q sou eu
+    avatar(argumento, autor, message, mencao, perfil) {
+        var arquivo = `./img/${argumento}`
+        client.user.setAvatar(arquivo.replace(' ', ''))
+        return `Avatar foi trocado!`
+    },
+    atividade(argumento) { client.user.setActivity(`${argumento}`, { type: "CUSTOM_STATUS" }) },
+    escutando(argumento) { client.user.setActivity(`${argumento}`, { type: "LISTENING" }) },
+    jogando(argumento) { client.user.setActivity(`${argumento}`, { type: "PLAYING" }) },
+    stream(argumento) { client.user.setActivity(`${argumento}`, { type: "STREAMING" }) },
+    assistindo(argumento) { client.user.setActivity(`${argumento}`, { type: "WATCHING" }) },
+    nomebot(argumento) { client.user.setUsername(argumento) },
+    shutdown() {
+        message.channel.send(`Estou me desligando! Até a proxima!`)
+        process.exit()
+    },
+    consolelistener(argumento, autor, message, mencao, perfil) {
+        let ligado = db.get("configs").find({ id: "consolelistener" }).value()
+        if (ligado.valor == 0) {
+            db.get("configs").find({ id: "consolelistener" }).assign({ valor: 1 }).write()
+            return `Console listener on!`
+        } else if(ligado.valor == 1){
+            db.get("configs").find({ id: "consolelistener" }).assign({ valor: 0 }).write()
+            return `Console listener off!`
+        }
+    },
+    escrever(argumento, autor, message, mencao, perfil){
+        console.log(message.channel)
+    }
+}
+async function pingz(argumento, autor, message, mencao, perfil) {
+    const m = await message.channel.send("Ping?")
+    m.edit(`Pong! A Latencia é ${m.createdTimestamp - message.createdTimestamp}ms.`)
+}
+
+
+client.on('message', message => {
+    var ligado = db.get("configs").find({ id: "consolelistener" }).value()
+    if (ligado.valor == 0) return
+    console.log(`${message.author.username}: ${message.content}`)
+})

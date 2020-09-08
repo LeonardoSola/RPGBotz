@@ -67,7 +67,7 @@ const comandos = {
         if (!Number(args[1])) { return 'Coloque um numero da proxima vez!' }
         if (args[0] == "+") {
             let n = vPrev + Number(args[1])
-            if (n > perfil.vidaMaxima) {
+            if (n >= perfil.vidaMaxima) {
                 db.get(message.guild.id).find({ id: autor.id }).assign({ vida: perfil.vidaMaxima }).write()
                 return `Você tinha ${vPrev}, ganhou ${args[1]} porem sua vida maxima é ${perfil.vidaMaxima} entao ficara com ${perfil.vidaMaxima}!`
             }
@@ -213,6 +213,46 @@ ${mostrarItens(perfil)}`
             db.get(message.guild.id).find({ id: autor.id }).assign({ itens: newItens }).write()
             return `${removed} foi retirado dos seus itens!`
         }
+        if (Number(args[0]) != NaN) {
+            if (!Number(args[1]) && Number(args[1]) != 0) { return 'Coloque o numero do item que quer colocar quantidade' }
+
+            var newItens = new Array
+            var newQuants = new Array
+            let quant = new Array
+            let numeroAM = 0
+
+            newQuants = prevItens[Number(args[0]) - 1]
+
+            let reg1 = /\(/g
+            let reg2 = /\)/g
+            if (!reg1.test(newQuants) && !reg2.test(newQuants)) {
+                newQuants = newQuants + '(00)'
+                numeroAM = 4
+            }
+
+            newItens = prevItens
+            quant = newQuants
+
+            quant = quant.split('(')
+            quant = quant[1].split(')')
+            quant = quant[0]
+            
+            let numb = -2 - quant.length
+
+            
+            console.log(Number(args[1]))
+            if (Number(args[1]) == 0) {
+                console.log('é Zer0')
+                prevItens[Number(args[0]) - 1] = `${newQuants.slice(0, numb).trim()}`
+                db.get(message.guild.id).find({ id: autor.id }).assign({ itens: prevItens }).write()
+                return `agora ${newQuants.slice(0, numb).trim()} não tem unidades`
+            }
+            
+            prevItens[Number(args[0]) - 1] = `${newQuants.slice(0, numb).trim()} \(${Number(args[1])}\)`
+            db.get(message.guild.id).find({ id: autor.id }).assign({ itens: prevItens }).write()
+
+            return `agora ${newQuants.slice(0, numb).trim()} tem ${Number(args[1])} unidades`
+        }
     },
     apagarperfil(argumento, autor, message, mencao, perfil) {
         if (perfil == undefined) {
@@ -222,9 +262,9 @@ ${mostrarItens(perfil)}`
         return 'Sua ficha foi resetada!'
     },
     nome(argumento, autor, message, mencao, perfil) {
-        var vPrev = Number(perfil.vida)
+        var vPrev = Number(perfil.nome)
         if (argumento == '') {
-            return `Seu nome é: ${perfil.vida}`
+            return `Seu nome é: ${perfil.nome}`
         }
         if (argumento.length > 30) {
             return `O nome que voce tentou colocar tem ${argumento.length} caracteres. O limite é 30!`
@@ -232,6 +272,30 @@ ${mostrarItens(perfil)}`
         let n = argumento
         db.get(message.guild.id).find({ id: autor.id }).assign({ nome: n }).write()
         return `Seu nome agora é: ${n}!`
+    },
+    provisoes(argumento, autor, message, mencao, perfil) {
+        var vPrev = Number(perfil.provisoes)
+        if (argumento == '') {
+            return `Suas provisões: ${perfil.provisoes}`
+        }
+        var args = argumento.split(' ')
+        if (Number(args[0])) {
+            let n = args[0]
+            db.get(message.guild.id).find({ id: autor.id }).assign({ provisoes: n }).write()
+            return `Suas provisões agora é: ${n}!`
+        }
+        if (args[1] == '') { return 'Seja claro com o que você quer!' }
+        if (!Number(args[1])) { return 'Coloque um numero da proxima vez!' }
+        if (args[0] == "+") {
+            let n = vPrev + Number(args[1])
+            db.get(message.guild.id).find({ id: autor.id }).assign({ provisoes: n }).write()
+            return `Você tinha ${vPrev}, ganhou ${args[1]} e agora esta com ${n}!`
+        }
+        if (args[0] == "-") {
+            let n = vPrev - Number(args[1])
+            db.get(message.guild.id).find({ id: autor.id }).assign({ provisoes: n }).write()
+            return `Você tinha ${vPrev}, perdeu ${args[1]} e agora esta com ${n}!`
+        }
     },
     ping(argumento, autor, message, mencao, perfil) {
         pingz(argumento, autor, message, mencao, perfil)
@@ -355,7 +419,7 @@ const helpComandos = {
     inteligencia() { return "Escreva $inteligencia (numero da inteligencia). Exemplo: $inteligencia 11" },
     percepcao() { return "Escreva $percepcao (numero da percepção). Exemplo: $percepcao 11" },
     carisma() { return "Escreva $carisma (numero do carisma). Exemplo: $carisma 11" },
-    itens() { return "Escreva $itens pra mostrar seus itens, escreva $itens + (nome do item) ou escreva $itens - (numero do item no iventario). Exemplo: $itens ou $itens - 2" },
+    itens() { return "Escreva $itens pra mostrar seus itens, escreva $itens + (nome do item) ou escreva $itens - (numero do item no iventario). Exemplo: $itens ou $itens - 2 | Quantidade: escreva $itens (numero do item) (quantidade) para colocar quantidade no item, caso a quantidade seja 0 a quantidade é removida. Exemplo: $itens 3 25" },
     nome() { return "Escreva $nome (e o nome desejado) ou nome $nome pra mostrar seu nome. Exemplo: $nome Leonardo" },
     apagarperfil() { return "Escreva $apagarperfil pra apagar seu perfil. CUIDADO!. Exemplo: $apagarperfil" },
     ping() { return "Escreva $ping para ver o ping do bot. Exemplo: $ping" },
@@ -402,12 +466,12 @@ const admComands = { // comandos do corno do adm... q sou eu
         if (ligado.valor == 0) {
             db.get("configs").find({ id: "consolelistener" }).assign({ valor: 1 }).write()
             return `Console listener on!`
-        } else if(ligado.valor == 1){
+        } else if (ligado.valor == 1) {
             db.get("configs").find({ id: "consolelistener" }).assign({ valor: 0 }).write()
             return `Console listener off!`
         }
     },
-    escrever(argumento, autor, message, mencao, perfil){
+    escrever(argumento, autor, message, mencao, perfil) {
         console.log(message.channel)
     }
 }

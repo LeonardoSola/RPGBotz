@@ -322,7 +322,7 @@ Comandos:
 }
 // Função pra pegar numero aleatorio
 function getRandom(x) {
-    return Math.floor(Math.random() * (x - 1) + 1)
+    return Math.floor(Math.random() * (x) + 1)
 }
 
 client.once('ready', () => {
@@ -366,6 +366,7 @@ function fichaInteira(perfil) {
     > Vida: ${perfil.vida}/${perfil.vidaMaxima}
     > Habilidade: ${perfil.habilidade}
     > Ouro: ${perfil.ouro}
+    > Provisoes: ${perfil.provisoes}
     > __________________
     > Força: ${perfil.forca}
     > Destreza: ${perfil.destreza}
@@ -401,6 +402,7 @@ function novoPerfil(argumento, autor, message, mencao, perfil) {
             forca: 0,
             destreza: 0,
             inteligencia: 0,
+            provisoes:0,
             percepcao: 0,
             carisma: 0,
             itens: [],

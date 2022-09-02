@@ -463,16 +463,6 @@ const admComands = { // comandos do corno do adm... q sou eu
         message.channel.send(`Estou me desligando! Até a proxima!`)
         process.exit()
     },
-    consolelistener(argumento, autor, message, mencao, perfil) {
-        let ligado = db.get("configs").find({ id: "consolelistener" }).value()
-        if (ligado.valor == 0) {
-            db.get("configs").find({ id: "consolelistener" }).assign({ valor: 1 }).write()
-            return `Console listener on!`
-        } else if (ligado.valor == 1) {
-            db.get("configs").find({ id: "consolelistener" }).assign({ valor: 0 }).write()
-            return `Console listener off!`
-        }
-    },
     escrever(argumento, autor, message, mencao, perfil) {
         console.log(message.channel)
     }
@@ -481,10 +471,3 @@ async function pingz(argumento, autor, message, mencao, perfil) {
     const m = await message.channel.send("Ping?")
     m.edit(`Pong! A Latencia é ${m.createdTimestamp - message.createdTimestamp}ms.`)
 }
-
-
-client.on('message', message => {
-    var ligado = db.get("configs").find({ id: "consolelistener" }).value()
-    if (ligado.valor == 0) return
-    console.log(`${message.author.username}: ${message.content}`)
-})
